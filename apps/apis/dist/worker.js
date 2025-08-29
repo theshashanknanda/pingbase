@@ -1,8 +1,9 @@
 "use strict";
 /**
  * CLI command to get 1 new message from stream that has not been delivered to anyone else
- * - > XGROUP CREATE pingbase:website workers $ MKSTREAM
- * - XREADGROUP GROUP workers worker-1 COUNT 1 STREAMS pingbase:website >
+ * - docker run -d --name redis -p 6379:6379 redis:latest
+ * - docker exec -it redis redis-cli
+ * - XGROUP CREATE pingbase:website workers $ MKSTREAM
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 const redis_1 = require("redis");
@@ -28,6 +29,9 @@ const main = async () => {
     const processJob = async (msg) => {
         // @ts-ignore
         const { website, url, region } = msg.message;
+        if (!website || !url || !region) {
+            return;
+        }
         let status = 'Unknown';
         let responseTime = Date.now();
         // Ping website

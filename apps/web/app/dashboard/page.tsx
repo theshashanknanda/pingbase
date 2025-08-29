@@ -256,55 +256,47 @@ const Dashboard: React.FC = () => {
                   key={website.id}
                   className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-4 sm:p-6 hover:bg-slate-800/70 transition-all duration-200 group"
                 >
-                  <div className="flex items-start">
-                    {/* Status Dot */}
-                    {/* <div className={`w-3 h-3 ${statusInfo.bgColor} rounded-full shadow-lg flex-shrink-0 mt-1`}></div> */}
-                    
-                    {/* Content */}
-                    <div className="flex-1 min-w-0 ml-2">
-                      <div className="flex items-start justify-between gap-8">
-                        <div className="space-y-1">
-                          {/* URL */}
-                          <div className="flex items-center gap-4 mb-4">
-                            <h3 className="text-base sm:text-lg font-semibold text-white group-hover:text-purple-200 transition-colors truncate">
-                              {website.url}
-                            </h3>
-                          </div>
-                          
-                          {/* Status and Info */}
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-400">
-                            <div className="flex items-center gap-1.5">
-                              <StatusIcon className={`w-4 h-4 ${statusInfo.color} flex-shrink-0`} />
-                              <span>{statusInfo.status}</span>
-                            </div>
-                            
-                            {statusInfo.responseTime && (
-                              <span>Response: {statusInfo.responseTime}ms</span>
-                            )}
-                            
-                            <span>
-                              Last: {website.tickes[0] ? new Date(website.tickes[0]?.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Pending"}
-                            </span>
-                          </div>
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 w-full">
+                    <div className="space-y-1 min-w-0">
+                      {/* URL */}
+                      <div className="flex items-center gap-4 mb-2">
+                        <h3 className="text-base sm:text-lg font-semibold text-white group-hover:text-purple-200 transition-colors truncate max-w-[calc(100vw-200px)] sm:max-w-none">
+                          {website.url}
+                        </h3>
+                      </div>
+                      
+                      {/* Status and Info */}
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-400">
+                        <div className="flex items-center gap-1.5">
+                          <StatusIcon className={`w-4 h-4 ${statusInfo.color} flex-shrink-0`} />
+                          <span>{statusInfo.status}</span>
                         </div>
                         
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-2 ml-4">
-                          <button
-                            onClick={() => router.push(`/website/${website.id}`)}
-                            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 hover:text-white border border-purple-600/30 rounded-lg transition-all duration-200 text-sm whitespace-nowrap"
-                          >
-                            View Details
-                          </button>
-                          <button
-                            onClick={() => deleteWebsite(website.id, website.url)}
-                            className="p-1.5 sm:p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-all duration-200 flex-shrink-0"
-                            title="Delete website"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                        {statusInfo.responseTime && (
+                          <span>Response: {statusInfo.responseTime}ms</span>
+                        )}
+                        
+                        <span>
+                          Last: {website.tickes[0] ? new Date(website.tickes[0]?.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Pending"}
+                        </span>
                       </div>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      <button
+                        onClick={() => router.push(`/website/${website.id}`)}
+                        className="px-3 sm:px-4 py-1.5 sm:py-2 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 hover:text-white border border-purple-600/30 rounded-lg transition-all duration-200 text-sm whitespace-nowrap"
+                      >
+                        View Details
+                      </button>
+                      <button
+                        onClick={() => deleteWebsite(website.id, website.url)}
+                        className="p-1.5 sm:p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-all duration-200 flex-shrink-0"
+                        title="Delete website"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>

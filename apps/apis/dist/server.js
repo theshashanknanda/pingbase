@@ -96,13 +96,13 @@ router.get('/status/:websiteId', async (req, res) => {
             region: true,
         }
     });
-    if (!ticks.length) {
-        return res.status(404).json({
-            success: true,
-            message: 'No ticks found for this website',
-            data: ticks,
-        });
-    }
+    // if (!ticks.length) {
+    //     return res.status(404).json({ 
+    //         success: true,
+    //         message: 'No ticks found for this website',
+    //         data: ticks,
+    //     });
+    // }
     return res.json(ticks);
 });
 // Mount router at /api/v1

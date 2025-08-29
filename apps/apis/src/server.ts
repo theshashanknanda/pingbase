@@ -110,13 +110,13 @@ router.get('/status/:websiteId', async (req: Request, res: Response) => {
         }
     })
 
-    if (!ticks.length) {
-        return res.status(404).json({ 
-            success: true,
-            message: 'No ticks found for this website',
-            data: ticks,
-        });
-    }
+    // if (!ticks.length) {
+    //     return res.status(404).json({ 
+    //         success: true,
+    //         message: 'No ticks found for this website',
+    //         data: ticks,
+    //     });
+    // }
 
     return res.json(ticks);
 })
