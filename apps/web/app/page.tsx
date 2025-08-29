@@ -1,9 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { useUser } from "@auth0/nextjs-auth0"
 import { getAccessToken } from "@auth0/nextjs-auth0";
 import React from 'react';
@@ -28,6 +25,79 @@ import {
   PlayCircle,
   ArrowLeft
 } from 'lucide-react';
+
+const Button = ({ 
+  children, 
+  onClick, 
+  className = '', 
+  variant = 'default',
+  ...props 
+}: { 
+  children: React.ReactNode; 
+  onClick?: () => void; 
+  className?: string;
+  variant?: 'default' | 'ghost' | 'outline' | 'gradient';
+  [key: string]: any;
+}) => {
+  const baseStyles = 'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
+  
+  const variants = {
+    default: 'bg-white text-gray-900 hover:bg-gray-100',
+    ghost: 'bg-white text-gray-900 hover:bg-gray-100',
+    outline: 'border border-white/20 bg-transparent hover:bg-white/5 text-white',
+    gradient: 'bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white',
+  };
+
+  return (
+    <button
+      className={`${baseStyles} ${variants[variant]} ${className}`}
+      onClick={onClick}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
+
+const Card = ({ className, ...props }: { className?: string; children: React.ReactNode; [key: string]: any }) => (
+  <div className={`rounded-lg border bg-card text-card-foreground shadow-sm ${className}`} {...props} />
+);
+
+const CardHeader = ({ className, ...props }: { className?: string; children: React.ReactNode; [key: string]: any }) => (
+  <div className={`flex flex-col space-y-1.5 p-6 ${className}`} {...props} />
+);
+
+const CardTitle = ({ className, ...props }: { className?: string; children: React.ReactNode; [key: string]: any }) => (
+  <h3 className={`text-2xl font-semibold leading-none tracking-tight ${className}`} {...props} />
+);
+
+const CardContent = ({ className, ...props }: { className?: string; children: React.ReactNode; [key: string]: any }) => (
+  <div className={`p-6 pt-0 ${className}`} {...props} />
+);
+
+const Badge = ({ 
+  variant = 'default', 
+  className = '', 
+  ...props 
+}: { 
+  variant?: 'default' | 'secondary' | 'destructive' | 'outline';
+  className?: string;
+  children: React.ReactNode;
+  [key: string]: any;
+}) => {
+  const baseStyles = 'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2';
+  
+  const variants = {
+    default: 'border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
+    secondary: 'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
+    destructive: 'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
+    outline: 'text-foreground',
+  };
+
+  return (
+    <span className={`${baseStyles} ${variants[variant]} ${className}`} {...props} />
+  );
+};
 
 export default function Home() {
   const [animatedCount, setAnimatedCount] = useState(0);
@@ -108,13 +178,13 @@ export default function Home() {
               </a>
               <Button 
                 variant="ghost" 
-                className="text-white/90 hover:bg-white/10"
-                onClick={() => window.location.href = user ? '/auth/logout' : '/auth/login'}
+                className="text-white/90 p-4 px-6 text-left w-fit hover:bg-white/10 bg-white/10"
+                onClick={() => window.location.href = user ? '/auth/logout' : '/auth/login?returnTo=/dashboard'}
               >
                 {user ? 'Logout' : 'Login'}
               </Button>
               <Button 
-                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg shadow-pink-500/20"
+                className="bg-gradient-to-r p-4 from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg shadow-pink-500/20"
                 onClick={() => window.location.href = user ? '/dashboard' : '/auth/login?returnTo=/dashboard'}
               >
                 {user ? 'Dashboard' : 'Get Started'}
@@ -125,41 +195,44 @@ export default function Home() {
 
           {/* Mobile Navigation */}
           {mobileMenuOpen && (
-            <div className="md:hidden py-4 space-y-2">
+            <div className="md:hidden py-4 space-y-3">
               <a
                 href="#features"
-                className="block px-3 py-2 text-base font-medium text-white hover:bg-white/10 rounded-lg"
+                className="block px-4 py-3 text-base font-medium text-white hover:bg-white/10 rounded-lg"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Features
               </a>
               <a
                 href="#status"
-                className="block px-3 py-2 text-base font-medium text-white hover:bg-white/10 rounded-lg"
+                className="block px-4 py-3 text-base font-medium text-white hover:bg-white/10 rounded-lg"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Demo
               </a>
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start text-white/90 hover:bg-white/10"
-                onClick={() => {
-                  window.location.href = user ? '/auth/logout' : '/auth/login';
-                  setMobileMenuOpen(false);
-                }}
-              >
-                {user ? 'Logout' : 'Login'}
-              </Button>
-              <Button 
-                className="w-full justify-center bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg shadow-pink-500/20 mt-2"
-                onClick={() => {
-                  window.location.href = user ? '/dashboard' : '/auth/login?returnTo=/dashboard';
-                  setMobileMenuOpen(false);
-                }}
-              >
-                {user ? 'Dashboard' : 'Get Started'}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <div className="pt-2 space-y-3 border-t border-white/10">
+                <Button 
+                  variant="ghost"
+                  className="w-full justify-start px-4 py-3 text-base font-medium"
+                  onClick={() => {
+                    window.location.href = user ? '/auth/logout' : '/auth/login';
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  {user ? 'Logout' : 'Login'}
+                </Button>
+                <Button 
+                  variant="gradient"
+                  className="w-full justify-center px-6 py-3 text-base font-medium shadow-lg shadow-pink-500/30"
+                  onClick={() => {
+                    window.location.href = user ? '/dashboard' : '/auth/login?returnTo=/dashboard';
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  {user ? 'Dashboard' : 'Get Started'}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </div>
