@@ -26,15 +26,3 @@ Here’s a preview of the project:
 
 ---
 
-## Getting Started
-
-Follow these steps to set up the project locally.
-
-### Install Dependencies
-
-```bash
-npm install
-# or
-yarn install
-# or
-pnpm install
