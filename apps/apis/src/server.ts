@@ -28,6 +28,13 @@ const checkJwt = auth({
 // Create router
 const router = express.Router();
 
+router.get('/', (req: Request, res: Response) => {
+    return res.json({
+        success: true,
+        message: "Welcome to PingBase API",
+    })
+})
+
 // get all websites
 router.get('/allWebsites/:email', checkJwt, async (req: Request, res: Response) => {
     const email = req.params.email;
