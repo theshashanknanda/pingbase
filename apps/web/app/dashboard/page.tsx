@@ -156,6 +156,7 @@ const Dashboard: React.FC = () => {
         setJwt(token)
 
         setUserEmail(user?.email)
+        console.log(user?.email)
       } catch (err) {
         console.log(err)
       }

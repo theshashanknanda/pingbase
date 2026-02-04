@@ -32,12 +32,12 @@ const main = async () => {
         if (!website || !url || !region) {
             return;
         }
-        let status = 'Unknown';
+        let status = "Unknown";
         let responseTime = Date.now();
         // Ping website
         try {
             const res = await fetch(`${url}`);
-            status = res.ok ? 'Up' : 'Down';
+            status = res.ok ? "Up" : "Down";
         }
         catch (e) {
             status = "Down";
@@ -59,21 +59,27 @@ const main = async () => {
     const runWorker = async () => {
         console.log(`${WORKER_NAME} Worker: STARTED`);
         while (true) {
-            const result = await redis.xReadGroup(GROUP_NAME, WORKER_NAME, {
-                key: 'pingbase:website',
-                id: '>',
-            }, {
-                COUNT: 1,
-                BLOCK: 5000,
-            });
-            // console.log(result)
-            if (result && Array.isArray(result)) {
-                for (const stream of result) {
-                    // @ts-ignore
-                    for (const msg of stream?.messages) {
-                        await processJob(msg);
-                        await redis.xAck(STREAM_NAME, GROUP_NAME, msg.id);
+            try {
+                const result = await redis.xReadGroup(GROUP_NAME, WORKER_NAME, { key: STREAM_NAME, id: ">" }, { COUNT: 1, BLOCK: 5000 });
+                if (result && Array.isArray(result)) {
+                    for (const stream of result) {
+                        // @ts-ignore
+                        for (const msg of stream?.messages) {
+                            await processJob(msg);
+                            await redis.xAck(STREAM_NAME, GROUP_NAME, msg.id);
+                        }
                     }
+                }
+            }
+            catch (err) {
+                if (err.message.includes("NOGROUP")) {
+                    console.log(`[${WORKER_NAME}] Group missing, creating it...`);
+                    await redis.xGroupCreate(STREAM_NAME, GROUP_NAME, "$", {
+                        MKSTREAM: true,
+                    });
+                }
+                else {
+                    console.error(err);
                 }
             }
         }

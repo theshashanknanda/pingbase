@@ -5,6 +5,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsc -b && nodemon ./dist/server.js",
+    "scheduler": "tsx src/scheduler.ts",
+    "worker": "tsx src/worker.ts WORKER-1",
     "build": "tsc -b"
   },
   "keywords": [],
