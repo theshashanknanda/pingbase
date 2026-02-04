@@ -24,7 +24,7 @@ const main = async () => {
   await redis.connect();
 
   // read worker name from CLI
-  const WORKER_NAME = process.argv[2] as string;
+  const WORKER_NAME = "WORKER-1";
 
   // get stream credentials
   const STREAM_NAME = "pingbase:website";
