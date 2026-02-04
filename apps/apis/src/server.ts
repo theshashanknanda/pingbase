@@ -6,6 +6,10 @@ const { auth } = require('express-oauth2-jwt-bearer');
 import { createClient } from "redis";
 import cors from "cors"
 
+// At the top of server.ts
+import './scheduler'; // This will start the scheduler
+import './worker';    // This will start the worker
+
 dotenv.config();
 
 const app = express();
