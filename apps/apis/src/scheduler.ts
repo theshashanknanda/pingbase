@@ -2,7 +2,13 @@ import { createClient } from "redis";
 import { PrismaClient } from "../generated/prisma";
 
 const prisma = new PrismaClient();
-const redis = createClient({ url: process.env.REDIS_URL });
+const redis = createClient({
+    url: process.env.REDIS_URL,
+    socket: {
+        tls: true,
+        rejectUnauthorized: false
+    }
+});
 redis.connect().catch(e => {
     console.log(e)
 })
@@ -10,7 +16,7 @@ redis.connect().catch(e => {
 const enqueueChecks = async () => {
     const websites = await prisma.website.findMany()
 
-    for(const site of websites){
+    for (const site of websites) {
         console.log(`Adding ${site.url}`)
         // enqueue website in redis queue
         await redis.xAdd("pingbase:website", "*", {
@@ -30,7 +36,7 @@ const enqueueChecks = async () => {
 }
 
 const loop = async () => {
-    while(true){
+    while (true) {
         await enqueueChecks();
 
         await new Promise((resolve) => setTimeout(resolve, 60_000))

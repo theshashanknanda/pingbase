@@ -20,7 +20,13 @@ const main = async () => {
   const prisma = new PrismaClient();
 
   // connect redis
-  const redis = createClient({ url: process.env.REDIS_URL });
+  const redis = createClient({
+    url: process.env.REDIS_URL,
+    socket: {
+      tls: true,
+      rejectUnauthorized: false
+    }
+  });
   await redis.connect();
 
   // read worker name from CLI

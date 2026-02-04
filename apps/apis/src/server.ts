@@ -18,15 +18,21 @@ const prisma = new PrismaClient();
 
 app.use(cors())
 
-const redis = createClient({ url: process.env.REDIS_URL });
+const redis = createClient({
+    url: process.env.REDIS_URL,
+    socket: {
+        tls: true,
+        rejectUnauthorized: false
+    }
+});
 redis.connect().catch(e => {
     console.log(e)
 });
 
 // Authorization middleware
 const checkJwt = auth({
-  audience: 'https://pingbase-api',
-  issuerBaseURL: `https://dev-lyuzcmb11nq1kss6.us.auth0.com/`,
+    audience: 'https://pingbase-api',
+    issuerBaseURL: `https://dev-lyuzcmb11nq1kss6.us.auth0.com/`,
 });
 
 // Create router
@@ -46,7 +52,7 @@ router.get('/allWebsites/:email', checkJwt, async (req: Request, res: Response) 
     const allWebsites = await prisma.website.findMany({
         include: {
             tickes: {
-                orderBy: {createdAt: 'desc'},
+                orderBy: { createdAt: 'desc' },
                 take: 1,
             }
         },
