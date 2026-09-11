@@ -42,12 +42,10 @@ const Dashboard: React.FC = () => {
   const [userEmail, setUserEmail] = useState<string | undefined>('')
 
   const loadSession = async () => {
-    const sessionRes = await fetch('/api/auth/session', { credentials: 'same-origin' });
-    const session = await sessionRes.json();
-    const email = session.user?.email;
-    const token = session.token ?? '';
+    const email = localStorage.getItem('pingbase_user_email') ?? undefined;
+    const token = localStorage.getItem('pingbase_token') ?? '';
 
-    setUser(session.user ?? null);
+    setUser(email ? { email } : null);
     setUserEmail(email);
     setJwt(token);
 
@@ -109,7 +107,9 @@ const Dashboard: React.FC = () => {
       
       if (response.ok) {
         setNewUrl('');
-        await fetchWebsites(userEmail, jwt);
+        const currentEmail = userEmail || localStorage.getItem('pingbase_user_email') || undefined;
+        const currentToken = jwt || localStorage.getItem('pingbase_token') || '';
+        await fetchWebsites(currentEmail, currentToken);
       } else {
         setError(result.message || 'Failed to add website');
       }
@@ -137,7 +137,9 @@ const Dashboard: React.FC = () => {
       });
 
       if (response.ok) {
-        await fetchWebsites(userEmail, jwt);
+        const currentEmail = userEmail || localStorage.getItem('pingbase_user_email') || undefined;
+        const currentToken = jwt || localStorage.getItem('pingbase_token') || '';
+        await fetchWebsites(currentEmail, currentToken);
       } else {
         setError('Failed to delete website');
       }

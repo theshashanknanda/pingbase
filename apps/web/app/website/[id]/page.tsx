@@ -133,11 +133,9 @@ const WebsiteDetails: React.FC = () => {
 
   useEffect(() => {
     async function loadSession() {
-      const sessionRes = await fetch('/api/auth/session', { credentials: 'same-origin' });
-      const session = await sessionRes.json();
-      const activeUser = session.user ?? null;
-      const activeEmail = activeUser?.email;
-      const activeToken = session.token ?? '';
+      const activeEmail = localStorage.getItem('pingbase_user_email') ?? undefined;
+      const activeToken = localStorage.getItem('pingbase_token') ?? '';
+      const activeUser = activeEmail ? { email: activeEmail } : null;
 
       setUser(activeUser);
       if (!activeEmail || !activeToken) {

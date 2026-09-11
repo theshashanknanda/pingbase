@@ -109,12 +109,15 @@ export default function Home() {
   const [authLoading, setAuthLoading] = useState(false);
 
   useEffect(() => {
-    fetch('/api/auth/session', { credentials: 'same-origin' })
-      .then(async (res) => {
-        const data = await res.json();
-        setUser(data.user ?? null);
-      })
-      .catch(() => setUser(null));
+    const savedToken = localStorage.getItem('pingbase_token');
+    const savedEmail = localStorage.getItem('pingbase_user_email');
+
+    if (savedToken && savedEmail) {
+      setUser({ email: savedEmail });
+      return;
+    }
+
+    setUser(null);
   }, []);
 
   const handleAuthSubmit = async (event: React.FormEvent) => {
@@ -139,10 +142,10 @@ export default function Home() {
     setAuthMessage(null);
 
     try {
-      const endpoint = authMode === 'signup' ? '/api/auth/signup' : '/api/auth/login';
+      const backendUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:4000/api/v1';
+      const endpoint = authMode === 'signup' ? `${backendUrl}/auth/signup` : `${backendUrl}/auth/login`;
       const res = await fetch(endpoint, {
         method: 'POST',
-        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), password }),
       });
@@ -152,7 +155,10 @@ export default function Home() {
         throw new Error(data.message || 'Authentication failed');
       }
 
-      setUser({ email: data.user?.email || email.trim() });
+      const userEmail = data.user?.email || email.trim();
+      localStorage.setItem('pingbase_token', data.token);
+      localStorage.setItem('pingbase_user_email', userEmail);
+      setUser({ email: userEmail });
       setEmail('');
       setPassword('');
       setConfirmPassword('');
@@ -240,9 +246,10 @@ export default function Home() {
               <Button 
                 variant="ghost" 
                 className="text-white/90 p-4 px-6 text-left w-fit hover:bg-white/10 bg-white/10"
-                onClick={async () => {
+                onClick={() => {
                   if (user) {
-                    await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+                    localStorage.removeItem('pingbase_token');
+                    localStorage.removeItem('pingbase_user_email');
                     setUser(null);
                     window.location.href = '/';
                     return;
@@ -291,10 +298,14 @@ export default function Home() {
                 <Button 
                   variant="ghost"
                   className="w-full justify-start px-4 py-3 text-base font-medium"
-                  onClick={async () => {
+                  onClick={() => {
                     if (user) {
-                      await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+                      localStorage.removeItem('pingbase_token');
+                      localStorage.removeItem('pingbase_user_email');
                       setUser(null);
+                      window.location.href = '/';
+                      setMobileMenuOpen(false);
+                      return;
                     }
                     setAuthMode('login');
                     document.getElementById('auth-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
