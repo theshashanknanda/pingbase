@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser } from "@auth0/nextjs-auth0"
-import { getAccessToken } from "@auth0/nextjs-auth0";
 import React from 'react';
 import { 
   Menu,
@@ -102,7 +100,70 @@ const Badge = ({
 export default function Home() {
   const [animatedCount, setAnimatedCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, isLoading } = useUser();
+  const [user, setUser] = useState<{ email: string } | null>(null);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [authMessage, setAuthMessage] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/auth/session', { credentials: 'same-origin' })
+      .then(async (res) => {
+        const data = await res.json();
+        setUser(data.user ?? null);
+      })
+      .catch(() => setUser(null));
+  }, []);
+
+  const handleAuthSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!email.trim() || !password) {
+      setAuthMessage('Please enter an email and password.');
+      return;
+    }
+
+    if (authMode === 'signup' && password.length < 6) {
+      setAuthMessage('Password must be at least 6 characters.');
+      return;
+    }
+
+    if (authMode === 'signup' && password !== confirmPassword) {
+      setAuthMessage('Passwords do not match.');
+      return;
+    }
+
+    setAuthLoading(true);
+    setAuthMessage(null);
+
+    try {
+      const endpoint = authMode === 'signup' ? '/api/auth/signup' : '/api/auth/login';
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Authentication failed');
+      }
+
+      setUser({ email: data.user?.email || email.trim() });
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      window.location.href = '/dashboard';
+    } catch (error) {
+      console.error(error);
+      setAuthMessage(error instanceof Error ? error.message : 'Authentication failed');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -179,15 +240,31 @@ export default function Home() {
               <Button 
                 variant="ghost" 
                 className="text-white/90 p-4 px-6 text-left w-fit hover:bg-white/10 bg-white/10"
-                onClick={() => window.location.href = user ? '/auth/logout' : '/auth/login?returnTo=/dashboard'}
+                onClick={async () => {
+                  if (user) {
+                    await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+                    setUser(null);
+                    window.location.href = '/';
+                    return;
+                  }
+                  setAuthMode('login');
+                  document.getElementById('auth-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }}
               >
                 {user ? 'Logout' : 'Login'}
               </Button>
               <Button 
                 className="bg-gradient-to-r p-4 from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg shadow-pink-500/20"
-                onClick={() => window.location.href = user ? '/dashboard' : '/auth/login?returnTo=/dashboard'}
+                onClick={() => {
+                  if (!user) {
+                    setAuthMode('signup');
+                    document.getElementById('auth-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return;
+                  }
+                  window.location.href = '/dashboard';
+                }}
               >
-                {user ? 'Dashboard' : 'Get Started'}
+                {user ? 'Dashboard' : 'Create Account'}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -214,8 +291,13 @@ export default function Home() {
                 <Button 
                   variant="ghost"
                   className="w-full justify-start px-4 py-3 text-base font-medium"
-                  onClick={() => {
-                    window.location.href = user ? '/auth/logout' : '/auth/login';
+                  onClick={async () => {
+                    if (user) {
+                      await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+                      setUser(null);
+                    }
+                    setAuthMode('login');
+                    document.getElementById('auth-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     setMobileMenuOpen(false);
                   }}
                 >
@@ -225,11 +307,16 @@ export default function Home() {
                   variant="gradient"
                   className="w-full justify-center px-6 py-3 text-base font-medium shadow-lg shadow-pink-500/30"
                   onClick={() => {
-                    window.location.href = user ? '/dashboard' : '/auth/login?returnTo=/dashboard';
+                    if (!user) {
+                      setAuthMode('signup');
+                      document.getElementById('auth-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                      window.location.href = '/dashboard';
+                    }
                     setMobileMenuOpen(false);
                   }}
                 >
-                  {user ? 'Dashboard' : 'Get Started'}
+                  {user ? 'Dashboard' : 'Create Account'}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -254,7 +341,10 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Button 
                 className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-8 py-6 text-lg font-medium rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg shadow-pink-500/30"
-                onClick={() => window.location.href = '#features'}
+                onClick={() => {
+                  setAuthMode('signup');
+                  document.getElementById('auth-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }}
               >
                 Start Monitoring
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -267,6 +357,78 @@ export default function Home() {
                 <PlayCircle className="mr-2 h-5 w-5" />
                 Learn More
               </Button>
+            </div>
+
+            <div id="auth-panel" className="mt-12 mx-auto max-w-md rounded-2xl border border-white/10 bg-slate-950/50 p-6 shadow-2xl shadow-pink-500/10 backdrop-blur-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-2xl font-semibold text-white">
+                  {authMode === 'login' ? 'Welcome back' : 'Create your account'}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                  className="text-sm font-medium text-pink-300 hover:text-white"
+                >
+                  {authMode === 'login' ? 'Need an account?' : 'Already a member?'}
+                </button>
+              </div>
+
+              <form onSubmit={handleAuthSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="email" className="mb-2 block text-sm text-slate-300">Email</label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-3 text-white placeholder:text-slate-500 focus:border-pink-500 focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="password" className="mb-2 block text-sm text-slate-300">Password</label>
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-3 text-white placeholder:text-slate-500 focus:border-pink-500 focus:outline-none"
+                    required
+                  />
+                </div>
+
+                {authMode === 'signup' && (
+                  <div>
+                    <label htmlFor="confirmPassword" className="mb-2 block text-sm text-slate-300">Confirm password</label>
+                    <input
+                      id="confirmPassword"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm password"
+                      className="w-full rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-3 text-white placeholder:text-slate-500 focus:border-pink-500 focus:outline-none"
+                      required
+                    />
+                  </div>
+                )}
+
+                {authMessage && (
+                  <p className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+                    {authMessage}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={authLoading}
+                  className="w-full rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 px-4 py-3 text-base font-semibold text-white transition hover:from-pink-600 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {authLoading ? 'Please wait...' : authMode === 'login' ? 'Log in' : 'Create account'}
+                </button>
+              </form>
             </div>
             
           </div>

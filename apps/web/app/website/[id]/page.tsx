@@ -4,8 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Globe, Clock, TrendingUp, AlertTriangle, CheckCircle, XCircle, Router } from 'lucide-react';
 import {useRouter} from "next/navigation"
 import { useParams } from "next/navigation";
-import { getAccessToken } from "@auth0/nextjs-auth0";
-import { useUser } from "@auth0/nextjs-auth0"
 
 interface Tick {
   id: string;
@@ -36,30 +34,44 @@ const WebsiteDetails: React.FC = () => {
   
   const params = useParams();  
   const router = useRouter()
-  const {user, isLoading} = useUser();
+  const [user, setUser] = useState<{ email?: string } | null>(null);
 
   const onBack = () => {
     router.push('/dashboard')
   }
 
-  const fetchWebsiteStatus = async () => {
+  const fetchWebsiteStatus = async (id?: string, token?: string) => {
+    const currentId = id ?? websiteId;
+    const currentToken = token ?? jwt;
+
+    if (!currentId || !currentToken) {
+      setLoading(false);
+      return;
+    }
+
     try{
       setLoading(true);
-      
-      // fetch last 20 ticks
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/status/${websiteId}`, {
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/status/${currentId}`, {
         headers: {
-          "Authorization": `Bearer ${jwt}`,
+          "Authorization": `Bearer ${currentToken}`,
         }
-      })
+      });
+
       const json = await res.json();
 
-      setTicks(json)
-      console.log(json)
+      if (!res.ok) {
+        throw new Error(json?.message || 'Failed to load website details');
+      }
 
-      setLoading(false);
+      setTicks(Array.isArray(json) ? json : []);
+      setError(null);
     }catch(error){
-      console.log(error)
+      console.error(error);
+      setError(error instanceof Error ? error.message : 'Failed to load website details');
+      setTicks([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -119,34 +131,32 @@ const WebsiteDetails: React.FC = () => {
 
   const stats = calculateStats();
 
-  useEffect(() => {  
-    if (!isLoading && !user) {
-      // Only redirect if auth finished loading AND user is not logged in
-      router.push('/');
-      return;
+  useEffect(() => {
+    async function loadSession() {
+      const sessionRes = await fetch('/api/auth/session', { credentials: 'same-origin' });
+      const session = await sessionRes.json();
+      const activeUser = session.user ?? null;
+      const activeEmail = activeUser?.email;
+      const activeToken = session.token ?? '';
+
+      setUser(activeUser);
+      if (!activeEmail || !activeToken) {
+        router.push('/');
+        return;
+      }
+
+      setUserEmail(activeEmail);
+      setJwt(activeToken);
+
+      const id = String(params.id ?? '');
+      setWebsiteId(id);
+      await fetchWebsiteStatus(id, activeToken);
+      const interval = setInterval(() => fetchWebsiteStatus(id, activeToken), 60000);
+      return () => clearInterval(interval);
     }
 
-    const id = params.id;
-    async function fetchData() {
-          try {
-            const token = await getAccessToken();
-            setJwt(token)
-    
-            setUserEmail(user?.email)
-          } catch (err) {
-            console.log(err)
-          }
-        }
-    
-        fetchData()
-    // @ts-ignore
-    setWebsiteId(id)
-
-    fetchWebsiteStatus();
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(fetchWebsiteStatus, 60000);
-    return () => clearInterval(interval);
-  }, [websiteId]);
+    loadSession();
+  }, [params.id, router]);
 
   if (loading) {
     return (

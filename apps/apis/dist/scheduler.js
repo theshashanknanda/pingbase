@@ -3,7 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const redis_1 = require("redis");
 const prisma_1 = require("../generated/prisma");
 const prisma = new prisma_1.PrismaClient();
-const redis = (0, redis_1.createClient)({ url: process.env.REDIS_URL });
+const redis = (0, redis_1.createClient)({
+    url: process.env.REDIS_URL,
+    socket: {
+        tls: true,
+        rejectUnauthorized: false
+    }
+});
 redis.connect().catch(e => {
     console.log(e);
 });

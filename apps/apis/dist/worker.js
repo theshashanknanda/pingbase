@@ -18,10 +18,16 @@ const main = async () => {
     // connect prisma
     const prisma = new prisma_1.PrismaClient();
     // connect redis
-    const redis = (0, redis_1.createClient)({ url: process.env.REDIS_URL });
+    const redis = (0, redis_1.createClient)({
+        url: process.env.REDIS_URL,
+        socket: {
+            tls: true,
+            rejectUnauthorized: false
+        }
+    });
     await redis.connect();
     // read worker name from CLI
-    const WORKER_NAME = process.argv[2];
+    const WORKER_NAME = "WORKER-1";
     // get stream credentials
     const STREAM_NAME = "pingbase:website";
     const GROUP_NAME = "workers";

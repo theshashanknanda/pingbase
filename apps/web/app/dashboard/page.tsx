@@ -3,8 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Globe, Clock, AlertCircle, CheckCircle, XCircle, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { useRouter } from "next/navigation";
-import { getAccessToken } from "@auth0/nextjs-auth0";
-import { useUser } from "@auth0/nextjs-auth0"
 
 interface Tick {
   id: string;
@@ -33,7 +31,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC = () => {
   const router = useRouter();
-  const {user, isLoading} = useUser();
+  const [user, setUser] = useState<{ email?: string } | null>(null);
   const [websites, setWebsites] = useState<Website[]>([])
   
   const [loading, setLoading] = useState(false);
@@ -43,22 +41,45 @@ const Dashboard: React.FC = () => {
   const [jwt, setJwt] = useState('')
   const [userEmail, setUserEmail] = useState<string | undefined>('')
 
-  const fetchWebsites = async () => {
+  const loadSession = async () => {
+    const sessionRes = await fetch('/api/auth/session', { credentials: 'same-origin' });
+    const session = await sessionRes.json();
+    const email = session.user?.email;
+    const token = session.token ?? '';
+
+    setUser(session.user ?? null);
+    setUserEmail(email);
+    setJwt(token);
+
+    return { email, token };
+  };
+
+  const fetchWebsites = async (email?: string, token?: string) => {
+    const currentEmail = email ?? userEmail;
+    const currentToken = token ?? jwt;
+
+    if (!currentEmail || !currentToken) {
+      setWebsites([]);
+      setLoading(false);
+      return;
+    }
+
     try{
       setLoading(true)
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/allWebsites/${userEmail}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/allWebsites/${currentEmail}`, {
         headers: {
-          "Authorization": `Bearer ${jwt}`
+          "Authorization": `Bearer ${currentToken}`
         }
       })
       const json = await res.json()
       console.log(json.data)
-      setWebsites(json.data)
+      setWebsites(json.data ?? [])
 
       setLoading(false)
     }catch(err){
       console.log(err)
+      setWebsites([])
       setLoading(false)
     }
   };
@@ -88,7 +109,7 @@ const Dashboard: React.FC = () => {
       
       if (response.ok) {
         setNewUrl('');
-        await fetchWebsites();
+        await fetchWebsites(userEmail, jwt);
       } else {
         setError(result.message || 'Failed to add website');
       }
@@ -116,7 +137,7 @@ const Dashboard: React.FC = () => {
       });
 
       if (response.ok) {
-        await fetchWebsites();
+        await fetchWebsites(userEmail, jwt);
       } else {
         setError('Failed to delete website');
       }
@@ -143,33 +164,20 @@ const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
-
-    if (!isLoading && !user) {
-      // Only redirect if auth finished loading AND user is not logged in
-      router.push('/');
-      return;
-    }
-
-    async function fetchData() {
-      try {
-        const token = await getAccessToken();
-        setJwt(token)
-
-        setUserEmail(user?.email)
-        console.log(user?.email)
-      } catch (err) {
-        console.log(err)
+    async function initDashboard() {
+      const session = await loadSession();
+      if (!session.email || !session.token) {
+        router.push('/');
+        return;
       }
+
+      await fetchWebsites(session.email, session.token);
+      const interval = setInterval(() => fetchWebsites(session.email, session.token), 60000);
+      return () => clearInterval(interval);
     }
 
-    fetchData()
-  
-    fetchWebsites();
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(fetchWebsites, 60000);
-
-    return () => clearInterval(interval);
-  }, [userEmail, user, isLoading]);
+    initDashboard();
+  }, [router]);
 
   if (loading) {
     return (
